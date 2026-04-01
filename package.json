@@ -1,0 +1,18 @@
+{
+  "name": "aaa",
+  "module": "src/App.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "bun run src/App.ts"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "@types/node": "^25.5.0"
+  }
+}

@@ -1,34 +1,66 @@
 import { getEpisodes } from "./GetEpisodes";
 import { extractFrames } from "./ExtractFrames";
 import { upscaleFrames } from "./UpscaleFrames";
-import { encodeEpisode } from "./EncondeEpisode";
+import { encodeEpisode } from "./EncodeEpisode"; // Correção do erro de digitação ("EncondeEpisode")
 import { cleanEpisodeTemp } from "./cleanEpisodeTemp";
+import OperationStatus from "./utils/OperationStatus";
 
-// Envolvemos tudo em uma função assíncrona
+/**
+ * Função principal que gerencia a fila de processamento de vídeos.
+ * Ordem do pipeline: Leitura -> Extração -> Upscale -> Encode -> Limpeza.
+ */
 async function processQueue() {
-  const episodes = getEpisodes();
-  console.log("Episódios na fila:", episodes);
+  const queueStatus = new OperationStatus("Pipeline");
+  const globalStartTime = Date.now();
 
-  // O for...of respeita o await e pausa a execução até a Promise resolver
-  for (const ep of episodes) {
+  // 1. Obtém os vídeos da pasta
+  const episodes = getEpisodes();
+
+  // Se a pasta estiver vazia, encerra o script sem fazer nada
+  if (episodes.length === 0) {
+    queueStatus.printMessage("Fila vazia. Encerrando pipeline.");
+    return;
+  }
+
+  // O for...of respeita o await e pausa a execução até cada Promise resolver
+  for (const [index, ep] of episodes.entries()) {
+    const epStartTime = Date.now();
+
     try {
-      console.log(`\n▶ Iniciando processamento do episódio: ${ep.name}`);
+      // Exibe: [Pipeline] ▶ Iniciando processamento (1/5): Naruto_Ep01
+      queueStatus.printMessage(
+        `\n▶ Iniciando processamento (${index + 1}/${episodes.length}): ${ep.name}`,
+      );
 
       await extractFrames(ep);
       await upscaleFrames(ep, { scale: 4 });
       await encodeEpisode(ep);
-      await cleanEpisodeTemp(ep);
-      console.log(`✅ Episódio ${ep} finalizado com sucesso!`);
+      cleanEpisodeTemp(ep);
+
+      const epTotalTimeSec = (Date.now() - epStartTime) / 1000;
+      queueStatus.printMessage(
+        `✅ Episódio '${ep.name}' concluído com sucesso em ${(epTotalTimeSec / 60).toFixed(1)} minutos.`,
+      );
     } catch (error) {
-      // O try/catch é importante em filas para que, se um episódio falhar,
-      // não trave ou cancele o processamento dos próximos episódios.
-      console.error(`❌ Erro ao processar o episódio ${ep.name}:`);
-      console.error(error);
+      // O try/catch garante que, se um vídeo corrompido quebrar no FFmpeg,
+      // o script pula para o próximo sem derrubar a fila inteira.
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      queueStatus.printErrorMessage(
+        () => {},
+        `Erro ao processar '${ep.name}'. Pulando para o próximo. Erro: ${errorMessage}`,
+      );
     }
   }
 
-  console.log("\n🎉 Todos os episódios foram processados!");
+  // Calcula o tempo total de todos os episódios somados
+  const globalTotalTimeSec = (Date.now() - globalStartTime) / 1000;
+
+  queueStatus.printMessage("\n=============================================");
+  queueStatus.printCompleteMessage(globalTotalTimeSec);
+  queueStatus.printMessage("🎉 Todos os episódios da fila foram processados!");
+  queueStatus.printMessage("=============================================\n");
 }
 
-// Inicia a fila
+// Inicia a execução
 processQueue();

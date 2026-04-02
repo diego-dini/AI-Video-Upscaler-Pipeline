@@ -21,8 +21,8 @@ Antes de rodar o projeto, você precisa ter as seguintes ferramentas instaladas 
 **1. Clone o repositório e instale as dependências:**
 
 ```bash
-git clone https://github.com/seu-usuario/seu-repositorio.git
-cd seu-repositorio
+git clone https://github.com/diego-dini/AI-Video-Upscaler-Pipeline
+cd AI-Video-Upscaler-Pipeline
 bun install
 ```
 

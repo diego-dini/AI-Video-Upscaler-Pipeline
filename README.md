@@ -94,16 +94,3 @@ Para referência, veja como sua pasta raiz deve ficar enquanto o script roda:
 
 - **Armazenamento:** O processo de extração gera **milhares** de imagens temporárias (ex: um vídeo de 20 min a 24fps gera cerca de 28.000 imagens). Certifique-se de ter espaço livre no disco (preferencialmente em um SSD/NVMe) antes de iniciar.
 - **Hardware:** O upscale via IA exige muito processamento. Por padrão, o script tentará utilizar a GPU.
-
-````
-
----
-
-### Dica:
-Como você comentou que usa o **Bun**, se ainda não o fez, no seu `package.json` o seu script `dev` deve estar configurado mais ou menos assim:
-
-```json
-"scripts": {
-  "dev": "bun run src/Pipeline.ts"
-}
-````

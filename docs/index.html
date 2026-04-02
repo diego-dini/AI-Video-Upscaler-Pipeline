@@ -1,0 +1,74 @@
+<!DOCTYPE html><html class="default" lang="en" data-base="./"><head><meta charset="utf-8"/><meta http-equiv="x-ua-compatible" content="IE=edge"/><title>ai-video-upscaler-pipeline</title><meta name="description" content="Documentation for ai-video-upscaler-pipeline"/><meta name="viewport" content="width=device-width, initial-scale=1"/><link rel="stylesheet" href="assets/style.css"/><link rel="stylesheet" href="assets/highlight.css"/><script defer src="assets/main.js"></script><script async src="assets/icons.js" id="tsd-icons-script"></script><script async src="assets/search.js" id="tsd-search-script"></script><script async src="assets/navigation.js" id="tsd-nav-script"></script></head><body><script>document.documentElement.dataset.theme = localStorage.getItem("tsd-theme") || "os";document.body.style.display="none";setTimeout(() => window.app?app.showPage():document.body.style.removeProperty("display"),500)</script><header class="tsd-page-toolbar"><div class="tsd-toolbar-contents container"><a href="index.html" class="title">ai-video-upscaler-pipeline</a><div id="tsd-toolbar-links"></div><button id="tsd-search-trigger" class="tsd-widget" aria-label="Search"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-search"></use></svg></button><dialog id="tsd-search" aria-label="Search"><input role="combobox" id="tsd-search-input" aria-controls="tsd-search-results" aria-autocomplete="list" aria-expanded="true" autocapitalize="off" autocomplete="off" placeholder="Search the docs" maxLength="100"/><ul role="listbox" id="tsd-search-results"></ul><div id="tsd-search-status" aria-live="polite" aria-atomic="true"><div>Preparing search index...</div></div></dialog><a href="#" class="tsd-widget menu" id="tsd-toolbar-menu-trigger" data-toggle="menu" aria-label="Menu"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-menu"></use></svg></a></div></header><div class="container container-main"><div class="col-content"><div class="tsd-page-title"><h1>ai-video-upscaler-pipeline</h1></div><div class="tsd-panel tsd-typography"><h1 id="🚀-ai-video-upscaler-pipeline" class="tsd-anchor-link">🚀 AI Video Upscaler Pipeline<a href="#🚀-ai-video-upscaler-pipeline" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h1>
+<p>Um pipeline automatizado e de alta performance para fazer <strong>upscale de vídeos</strong> (ideal para animes e animações) utilizando a Inteligência Artificial <strong>Real-ESRGAN</strong> e o poder do <strong>FFmpeg</strong>.</p>
+<p>Desenvolvido em <strong>TypeScript</strong> e rodando em cima do <strong>Bun</strong> 🥟 (substituto ultra-rápido para o Node.js).</p>
+<hr>
+<h2 id="⚙️-pré-requisitos" class="tsd-anchor-link">⚙️ Pré-requisitos<a href="#⚙️-pré-requisitos" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Antes de rodar o projeto, você precisa ter as seguintes ferramentas instaladas no seu sistema:</p>
+<ol>
+<li><strong><a href="https://bun.sh/">Bun</a></strong>: O runtime principal do projeto.</li>
+<li><strong><a href="https://ffmpeg.org/download.html">FFmpeg</a></strong>: Necessário para manipulação de áudio e vídeo. Certifique-se de que o <code>ffmpeg</code> e o <code>ffprobe</code> estejam adicionados às variáveis de ambiente (<code>PATH</code>) do seu sistema.</li>
+<li><strong><a href="https://github.com/xinntao/Real-ESRGAN/releases">Real-ESRGAN</a></strong>: O modelo de IA não vem embutido no projeto. Você deve baixar a versão CLI (ex: <code>realesrgan-ncnn-vulkan</code>) separadamente.</li>
+</ol>
+<hr>
+<h2 id="🛠️-instalação-e-configuração" class="tsd-anchor-link">🛠️ Instalação e Configuração<a href="#🛠️-instalação-e-configuração" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p><strong>1. Clone o repositório e instale as dependências:</strong></p>
+<pre><code class="bash"><span class="hl-0">git</span><span class="hl-1"> </span><span class="hl-2">clone</span><span class="hl-1"> </span><span class="hl-2">https://github.com/seu-usuario/seu-repositorio.git</span><br/><span class="hl-0">cd</span><span class="hl-1"> </span><span class="hl-2">seu-repositorio</span><br/><span class="hl-0">bun</span><span class="hl-1"> </span><span class="hl-2">install</span>
+</code><button type="button">Copy</button></pre>
+
+<p><strong>2. Crie a pasta de entrada:</strong>
+A pasta de inputs não é enviada para o Git. Você deve criá-la manualmente na raiz do projeto:</p>
+<pre><code class="bash"><span class="hl-0">mkdir</span><span class="hl-1"> </span><span class="hl-2">inputs</span>
+</code><button type="button">Copy</button></pre>
+
+<p><em>(Nota: A pasta <code>outputs</code> não precisa ser criada manualmente, o script a criará automaticamente durante a execução).</em></p>
+<p><strong>3. Configure o caminho do Real-ESRGAN:</strong>
+Abra o seu arquivo <code>.env</code> (ou a configuração dentro de <code>src/UpscaleFrames.ts</code>) e aponte para o caminho absoluto do executável do Real-ESRGAN que você baixou.</p>
+<pre><code class="env"># Exemplo de arquivo .env
+REALESRGAN_PATH="C:\caminho\para\realesrgan-ncnn-vulkan.exe"
+VERBOSE="true"
+</code><button type="button">Copy</button></pre>
+
+<hr>
+<h2 id="🚀-como-usar" class="tsd-anchor-link">🚀 Como Usar<a href="#🚀-como-usar" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<ol>
+<li>Coloque seus arquivos de vídeo originais (<code>.mp4</code> ou <code>.mkv</code>) dentro da pasta <code>inputs/</code>.</li>
+<li>Execute o comando principal através do Bun:</li>
+</ol>
+<pre><code class="bash"><span class="hl-0">bun</span><span class="hl-1"> </span><span class="hl-2">run</span><span class="hl-1"> </span><span class="hl-2">dev</span>
+</code><button type="button">Copy</button></pre>
+
+<ol start="3">
+<li>Acompanhe o terminal! O sistema possui uma interface de linha de comando (CLI) limpa e profissional que mostra o progresso, taxa de quadros (FPS) e o tempo estimado (ETA) de cada etapa.</li>
+<li>Quando finalizado, o vídeo em alta resolução estará disponível na pasta <code>outputs/</code>.</li>
+</ol>
+<hr>
+<h2 id="🧠-como-funciona-a-pipeline" class="tsd-anchor-link">🧠 Como Funciona (A Pipeline)<a href="#🧠-como-funciona-a-pipeline" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>O script não apenas aumenta a resolução do vídeo, ele orquestra todo um fluxo de trabalho profissional para garantir que não haja perda de áudio ou dessincronização:</p>
+<ul>
+<li><strong>1️⃣ Scanner (<code>getEpisodes</code>)</strong>: Lê a pasta <code>inputs/</code>, verifica a integridade dos vídeos e extrai metadados essenciais (Framerate, Duração, Total de Frames) usando o <code>ffprobe</code>.</li>
+<li><strong>2️⃣ Extract (<code>extractFrames</code>)</strong>: Usa o FFmpeg (com aceleração de hardware opcional) para extrair o áudio original sem perdas e quebrar o vídeo frame por frame em imagens.</li>
+<li><strong>3️⃣ Upscale (<code>upscaleFrames</code>)</strong>: Envia frame por frame para o Real-ESRGAN, que utiliza IA para aumentar a resolução e remover ruídos/artefatos de compressão.</li>
+<li><strong>4️⃣ Encode (<code>encodeEpisode</code>)</strong>: Junta os novos frames em alta resolução com o áudio original, gerando o arquivo final <code>.mp4</code>.</li>
+<li><strong>5️⃣ Cleanup (<code>cleanEpisodeTemp</code>)</strong>: Exclui os milhares de frames temporários para liberar espaço no seu disco rígido e passa para o próximo vídeo da fila.</li>
+</ul>
+<hr>
+<h2 id="📂-estrutura-de-pastas-esperada" class="tsd-anchor-link">📂 Estrutura de Pastas Esperada<a href="#📂-estrutura-de-pastas-esperada" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<p>Para referência, veja como sua pasta raiz deve ficar enquanto o script roda:</p>
+<pre><code class="text">📦 projeto/
+ ┣ 📂 inputs/            &lt;- (Crie manualmente) Coloque os vídeos aqui
+ ┣ 📂 outputs/           &lt;- (Gerado automaticamente) Vídeos upscaled salvos aqui
+ ┣ 📂 temp/              &lt;- (Gerado automaticamente) Pastas de frames e áudios
+ ┣ 📂 src/               &lt;- Código fonte TypeScript
+ ┣ 📜 package.json
+ ┣ 📜 bun.lockb
+ ┣ 📜 .env
+ ┗ 📜 README.md
+</code><button type="button">Copy</button></pre>
+
+<hr>
+<h2 id="📝-notas-e-recomendações" class="tsd-anchor-link">📝 Notas e Recomendações<a href="#📝-notas-e-recomendações" aria-label="Permalink" class="tsd-anchor-icon"><svg viewBox="0 0 24 24" aria-hidden="true"><use href="assets/icons.svg#icon-anchor"></use></svg></a></h2>
+<ul>
+<li><strong>Armazenamento:</strong> O processo de extração gera <strong>milhares</strong> de imagens temporárias (ex: um vídeo de 20 min a 24fps gera cerca de 28.000 imagens). Certifique-se de ter espaço livre no disco (preferencialmente em um SSD/NVMe) antes de iniciar.</li>
+<li><strong>Hardware:</strong> O upscale via IA exige muito processamento. Por padrão, o script tentará utilizar a GPU.</li>
+</ul>
+</div></div><div class="col-sidebar"><div class="page-menu"><div class="tsd-navigation settings"><details class="tsd-accordion"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-chevronDown"></use></svg><h3>Settings</h3></summary><div class="tsd-accordion-details"><div class="tsd-filter-visibility"><span class="settings-label">Member Visibility</span><ul id="tsd-filter-options"><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-protected" name="protected"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Protected</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-inherited" name="inherited" checked/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>Inherited</span></label></li><li class="tsd-filter-item"><label class="tsd-filter-input"><input type="checkbox" id="tsd-filter-external" name="external"/><svg width="32" height="32" viewBox="0 0 32 32" aria-hidden="true"><rect class="tsd-checkbox-background" width="30" height="30" x="1" y="1" rx="6" fill="none"></rect><path class="tsd-checkbox-checkmark" d="M8.35422 16.8214L13.2143 21.75L24.6458 10.25" stroke="none" stroke-width="3.5" stroke-linejoin="round" fill="none"></path></svg><span>External</span></label></li></ul></div><div class="tsd-theme-toggle"><label class="settings-label" for="tsd-theme">Theme</label><select id="tsd-theme"><option value="os">OS</option><option value="light">Light</option><option value="dark">Dark</option></select></div></div></details></div><details open class="tsd-accordion tsd-page-navigation"><summary class="tsd-accordion-summary"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"><use href="assets/icons.svg#icon-chevronDown"></use></svg><h3>On This Page</h3></summary><div class="tsd-accordion-details"><a href="#🚀-ai-video-upscaler-pipeline"><span>🚀 <wbr/>AI <wbr/>Video <wbr/>Upscaler <wbr/>Pipeline</span></a><ul><li><a href="#⚙️-pré-requisitos"><span>⚙️ <wbr/>Pré-<wbr/>requisitos</span></a></li><li><a href="#🛠️-instalação-e-configuração"><span>🛠️ <wbr/>Instalação e <wbr/>Configuração</span></a></li><li><a href="#🚀-como-usar"><span>🚀 <wbr/>Como <wbr/>Usar</span></a></li><li><a href="#🧠-como-funciona-a-pipeline"><span>🧠 <wbr/>Como <wbr/>Funciona (<wbr/>A <wbr/>Pipeline)</span></a></li><li><a href="#📂-estrutura-de-pastas-esperada"><span>📂 <wbr/>Estrutura de <wbr/>Pastas <wbr/>Esperada</span></a></li><li><a href="#📝-notas-e-recomendações"><span>📝 <wbr/>Notas e <wbr/>Recomendações</span></a></li></ul></div></details></div><div class="site-menu"><nav class="tsd-navigation"><a href="modules.html">ai-video-upscaler-pipeline</a><ul class="tsd-small-nested-navigation" id="tsd-nav-container"><li>Loading...</li></ul></nav></div></div></div><footer><p class="tsd-generator">Generated using <a href="https://typedoc.org/" target="_blank">TypeDoc</a></p></footer><div class="overlay"></div></body></html>

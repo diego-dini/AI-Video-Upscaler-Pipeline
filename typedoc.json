@@ -1,0 +1,5 @@
+{
+  "entryPoints": ["src/App.ts"],
+  "out": "docs",
+  "tsconfig": "tsconfig.json"
+}

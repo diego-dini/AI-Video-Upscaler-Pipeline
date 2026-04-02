@@ -1,19 +1,28 @@
 {
-  "name": "aaa",
-  "module": "src/App.ts",
+  "name": "ai-video-upscaler-pipeline",
+  "version": "0.1.0",
+  "description": "AI video upscaling pipeline using Bun + TypeScript",
   "type": "module",
   "private": true,
+  "module": "src/App.ts",
   "scripts": {
-    "dev": "bun run src/App.ts"
-  },
-  "devDependencies": {
-    "@types/bun": "latest"
-  },
-  "peerDependencies": {
-    "typescript": "^5"
+    "dev": "bun run src/App.ts",
+    "start": "bun run src/App.ts",
+    "build": "tsc",
+    "typecheck": "tsc --noEmit",
+    "docs": "typedoc",
+    "clean": "rm -rf dist docs"
   },
   "dependencies": {
-    "@types/node": "^25.5.0",
     "dotenv": "^17.4.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/node": "^20",
+    "typescript": "^5.4.0",
+    "typedoc": "^0.28.18"
+  },
+  "engines": {
+    "bun": ">=1.0.0"
   }
 }

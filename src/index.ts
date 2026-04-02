@@ -1,7 +1,7 @@
-import { getEpisodes } from "./GetEpisodes";
-import { extractFrames } from "./ExtractFrames";
-import { upscaleFrames } from "./UpscaleFrames";
-import { encodeEpisode } from "./EncodeEpisode"; // Correção do erro de digitação ("EncondeEpisode")
+import { getEpisodes } from "./getEpisodes";
+import { extractFrames } from "./extractFrames";
+import { upscaleFrames } from "./upscaleFrames";
+import { encodeEpisode } from "./encodeEpisode";
 import { cleanEpisodeTemp } from "./cleanEpisodeTemp";
 import OperationStatus from "./utils/OperationStatus";
 

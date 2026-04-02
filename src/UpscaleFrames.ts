@@ -14,7 +14,7 @@ export type UpscaleFramesArgs = {
   modelName?: string;
   /** IDs das GPUs que serão utilizadas, separadas por vírgula. Padrão: [0] (primeira GPU). */
   gpuId?: number[];
-  /** Caminho absoluto para o executável do Real-ESRGAN. */
+  /** Caminho para o executável do Real-ESRGAN. Padrão: Variável de ambiente ou caminho relativo. */
   realesrgan?: string;
   /** Configuração de threads por etapa de processamento [load:proc:save]. Padrão: ["4:8:4"]. */
   threadCount?: string[];
@@ -25,11 +25,6 @@ export type UpscaleFramesArgs = {
 /**
  * Executa o processo de upscale dos frames de um episódio utilizando a IA Real-ESRGAN.
  * O processo ocorre de forma assíncrona gerando um processo filho (child_process).
- *
- * @param episode - Objeto contendo os metadados do episódio (ID, total de frames, etc.).
- * @param options - Objeto opcional com as configurações de upscale e caminhos do executável.
- * @returns Uma Promise que resolve quando o processo terminar com sucesso, ou rejeita em caso de erro.
- * @throws {Error} Rejeita a Promise se o processo filho retornar um código diferente de 0.
  */
 export function upscaleFrames(
   episode: Episode,
@@ -38,12 +33,27 @@ export function upscaleFrames(
     modelName = "realesr-animevideov3",
     gpuId = [0],
     threadCount = ["4:8:4"],
-    realesrgan = process.env.REALESRGAN_PATH,
+    // Usa a variável de ambiente OU o caminho relativo por padrão
+    realesrgan = process.env.REALESRGAN_PATH ||
+      path.join("realesrgan", "realesrgan-ncnn-vulkan.exe"),
     tile = 512,
   }: UpscaleFramesArgs = {},
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     if (!realesrgan) throw new Error("Invalid realesrgan path");
+
+    // Resolve o caminho para garantir que o spawn use o caminho absoluto correto baseado na pasta raiz do projeto
+    const executablePath = path.resolve(realesrgan);
+
+    // Verifica se o executável realmente existe antes de tentar rodar
+    if (!fs.existsSync(executablePath)) {
+      return reject(
+        new Error(
+          `Executável do Real-ESRGAN não encontrado em: ${executablePath}`,
+        ),
+      );
+    }
+
     const operationStatus = new OperationStatus("Upscale");
     operationStatus.printMessage("2) Upscale com IA...");
 
@@ -51,45 +61,31 @@ export function upscaleFrames(
     const framesDir = path.join("temp", "frames", String(episode.id));
     const upscaledDir = path.join("temp", "framesUpscaled", String(episode.id));
 
-    // Prepara o diretório de saída: remove caso exista para evitar mistura de arquivos velhos e recria
+    // Prepara o diretório de saída
     if (fs.existsSync(upscaledDir)) {
       fs.rmSync(upscaledDir, { recursive: true, force: true });
     }
     fs.mkdirSync(upscaledDir, { recursive: true });
 
-    // Montagem dos argumentos para o CLI (Command Line Interface) do Real-ESRGAN
+    // Montagem dos argumentos para o CLI
     const args = ["-i", framesDir, "-o", upscaledDir, "-v"];
 
-    if (modelName) {
-      args.push("-n", modelName);
-    }
-    if (scale) {
-      args.push("-s", scale.toString());
-    }
-    if (gpuId && gpuId.length > 0) {
-      args.push("-g", gpuId.join(","));
-    }
-    if (threadCount && threadCount.length > 0) {
+    if (modelName) args.push("-n", modelName);
+    if (scale) args.push("-s", scale.toString());
+    if (gpuId && gpuId.length > 0) args.push("-g", gpuId.join(","));
+    if (threadCount && threadCount.length > 0)
       args.push("-j", threadCount.join(","));
-    }
-    if (tile) {
-      args.push("-t", tile.toString());
-    }
+    if (tile) args.push("-t", tile.toString());
 
-    // Inicia o processo filho do Real-ESRGAN
-    const up = spawn(realesrgan, args);
+    // Inicia o processo filho do Real-ESRGAN usando o caminho resolvido
+    const up = spawn(executablePath, args);
 
     let processed = 0;
     const startTime = Date.now();
 
-    /**
-     * Processa os logs emitidos pelo Real-ESRGAN para extrair o progresso atual.
-     * @param data - Buffer de dados vindos do stdout ou stderr.
-     */
     const handleData = (data: Buffer) => {
       const text = data.toString();
 
-      // Expressão regular para capturar linhas de frames concluídos (ex: frame_001.jpg -> frame_001.jpg done)
       const matches = text.match(
         /frame_\d+\.(jpg|png) -> .*frame_\d+\.(jpg|png) done/g,
       );
@@ -97,7 +93,6 @@ export function upscaleFrames(
       if (matches) {
         processed += matches.length;
 
-        // Cálculos de progresso e estimativas
         const percent = episode.frames
           ? ((processed / episode.frames) * 100).toFixed(2)
           : "??";
@@ -119,11 +114,9 @@ export function upscaleFrames(
       }
     };
 
-    // O Real-ESRGAN pode emitir logs de progresso tanto na saída padrão quanto na de erro
     up.stdout.on("data", handleData);
     up.stderr.on("data", handleData);
 
-    // Gerenciamento de encerramento do processo
     up.on("close", (code) => {
       if (code === 0) {
         operationStatus.printCompleteMessage(0);

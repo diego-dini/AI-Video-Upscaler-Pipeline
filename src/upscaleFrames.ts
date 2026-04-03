@@ -55,7 +55,7 @@ export function upscaleFrames(
     }
 
     const operationStatus = new OperationStatus("Upscale");
-    operationStatus.printMessage("2) Upscale com IA...");
+    operationStatus.printMessage("Upscale com IA...");
 
     // Definição dos diretórios de entrada e saída baseados no ID do episódio
     const framesDir = path.join("temp", "frames", String(episode.id));

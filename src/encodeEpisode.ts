@@ -17,6 +17,8 @@ export type EncodeEpisodeArgs = {
   /** Extensão das imagens de input (upscaled). Padrão: "png". Pode ser "jpg". */
   frameExtension?: "png" | "jpg";
   /** Caminho do executável do FFmpeg. Padrão: "ffmpeg" (espera que esteja nas variáveis de ambiente/PATH). */
+  audioExtension?: string;
+  /** Extensão do arquivo de audio. Padrão "m4a" */
   ffmpegPath?: string;
 };
 
@@ -40,17 +42,21 @@ export function encodeEpisode(
     audioCodec = "copy",
     pixelFormat = "yuv420p",
     frameExtension = "png",
+    audioExtension = "m4a",
     ffmpegPath = "ffmpeg",
   }: EncodeEpisodeArgs = {},
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     const operationStatus = new OperationStatus("Encode");
-    operationStatus.printMessage("3) Recriando vídeo...");
+    operationStatus.printMessage("Recriando vídeo...");
 
     const upscaledDir = path.join("temp", "framesUpscaled", String(episode.id));
-    const audioPath = path.join("temp", "audio", `${episode.id}.aac`);
+    const audioPath = path.join(
+      "temp",
+      "audio",
+      `${episode.id}.${audioExtension}`,
+    );
     const outputPath = episode.outputPath;
-
     // Garante que o diretório final exista
     const outputDir = path.dirname(outputPath);
     if (!fs.existsSync(outputDir)) {
@@ -74,7 +80,7 @@ export function encodeEpisode(
 
       // Input do vídeo (frames em sequência)
       "-framerate",
-      String(Math.round(episode.framerate) || 30),
+      String(episode.framerate || 30),
       "-i",
       frameInputPattern,
 
@@ -89,9 +95,6 @@ export function encodeEpisode(
       pixelFormat,
       "-c:a",
       audioCodec,
-
-      // Encerra a renderização baseada na duração do input mais curto (evita vídeos travados no último frame sem áudio)
-      "-shortest",
 
       // Output final
       outputPath,

@@ -4,6 +4,7 @@ import { upscaleFrames } from "./upscaleFrames";
 import { encodeEpisode } from "./encodeEpisode";
 import { cleanEpisodeTemp } from "./cleanEpisodeTemp";
 import OperationStatus from "./utils/OperationStatus";
+import { extractAudio } from "./extractAudio";
 
 /**
  * Função principal que gerencia a fila de processamento de vídeos.
@@ -33,7 +34,8 @@ async function processQueue() {
       );
 
       await extractFrames(ep);
-      await upscaleFrames(ep, { scale: 4 });
+      await extractAudio(ep);
+      await upscaleFrames(ep);
       await encodeEpisode(ep);
       cleanEpisodeTemp(ep);
 

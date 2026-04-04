@@ -35,7 +35,7 @@ async function processQueue() {
 
       await extractFrames(ep);
       await extractAudio(ep);
-      await upscaleFrames(ep, { scale: 1 });
+      await upscaleFrames(ep);
       await encodeEpisode(ep);
       cleanEpisodeTemp(ep);
 

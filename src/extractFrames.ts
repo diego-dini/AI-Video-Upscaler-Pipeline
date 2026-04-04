@@ -72,6 +72,10 @@ export function extractFrames(
       "-i",
       episode.inputPath,
 
+      // Scale frames to 480p resolution (854x480)
+      "-vf",
+      "scale=854:480",
+
       // Force constant frame rate extraction
       "-r",
       episode.framerate.toString(),

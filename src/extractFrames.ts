@@ -18,6 +18,8 @@ export type ExtractFramesArgs = {
   frameExtension?: "jpg" | "png";
   /** Path to the FFmpeg executable. Default: "ffmpeg" (expects it to be available in PATH). */
   ffmpegPath?: string;
+  /** Video scale/resolution for extracted frames. Default: "-1:360" (360p keeping aspect ratio). */
+  scale?: string;
 };
 
 /**
@@ -30,7 +32,7 @@ export type ExtractFramesArgs = {
  * 4. Displays real-time progress based on FFmpeg stderr output.
  *
  * @param episode - Object containing episode metadata and file paths.
- * @param options - Optional configuration for hardware acceleration, quality, and paths.
+ * @param options - Optional configuration for hardware acceleration, quality, paths, and scale.
  * @returns A Promise that resolves on successful extraction or rejects on error.
  */
 export function extractFrames(
@@ -41,6 +43,7 @@ export function extractFrames(
     videoQuality = 2,
     frameExtension = "png",
     ffmpegPath = "ffmpeg",
+    scale = "-1:360", // Padrão ajustado para 360p mantendo a proporção (aspect ratio)
   }: ExtractFramesArgs = {},
 ): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -72,9 +75,9 @@ export function extractFrames(
       "-i",
       episode.inputPath,
 
-      // Scale frames to 480p resolution (854x480)
+      // Scale frames to the requested resolution
       "-vf",
-      "scale=854:480",
+      `scale=${scale}`,
 
       // Force constant frame rate extraction
       "-r",

@@ -5,25 +5,32 @@ import type { Episode } from "./types/Episode";
 import OperationStatus from "./utils/OperationStatus";
 
 /**
- * Configurações para a leitura e mapeamento dos episódios na pasta de entrada.
+ * Configuration options for scanning and mapping episodes from the input directory.
  */
 export type GetEpisodesArgs = {
-  /** Diretório onde os vídeos originais estão localizados. Padrão: "inputs". */
+  /** Directory where source videos are located. Default: "inputs". */
   inputDir?: string;
-  /** Diretório onde os vídeos processados serão salvos. Padrão: "outputs". */
+  /** Directory where processed videos will be saved. Default: "outputs". */
   outputDir?: string;
-  /** Extensões de vídeo permitidas. Padrão: [".mp4", ".mkv"]. */
+  /** Allowed video file extensions. Default: [".mp4", ".mkv"]. */
   allowedExtensions?: string[];
-  /** Sufixo adicionado ao nome do arquivo final. Padrão: "_4k". */
+  /** Suffix appended to the output filename. Default: "_4k". */
   outputSuffix?: string;
 };
 
 /**
- * Lê a pasta de entradas, extrai os metadados de cada vídeo usando ffprobe
- * e retorna um array com a fila de episódios prontos para processamento.
+ * Reads the input directory, extracts metadata for each video using ffprobe,
+ * and returns an array of validated Episode objects ready for processing.
  *
- * @param options Configurações de diretórios e extensões.
- * @returns Array de objetos Episode validados.
+ * Steps performed:
+ * 1. Ensures the input directory exists (creates it if necessary).
+ * 2. Filters files based on allowed extensions.
+ * 3. Extracts metadata (duration, frame count, framerate) using ffprobe.
+ * 4. Applies fallback logic when frame count is unavailable.
+ * 5. Builds and returns a processing queue of Episode objects.
+ *
+ * @param options - Configuration for directories, extensions, and naming.
+ * @returns Array of Episode objects ready for processing.
  */
 export function getEpisodes({
   inputDir = "inputs",
@@ -33,30 +40,31 @@ export function getEpisodes({
 }: GetEpisodesArgs = {}): Episode[] {
   const operationStatus = new OperationStatus("Scanner");
 
-  // Garante que a pasta de entrada exista
+  // Ensure input directory exists
   if (!fs.existsSync(inputDir)) {
     fs.mkdirSync(inputDir, { recursive: true });
     operationStatus.printMessage(
-      `📂 Pasta '${inputDir}' criada. Coloque seus vídeos lá e rode o script novamente.`,
+      `Input directory '${inputDir}' was created. Place your videos there and run the process again.`,
     );
     return [];
   }
 
-  // Lê os arquivos e filtra apenas as extensões permitidas
+  // Read files and filter by allowed extensions
   const files = fs.readdirSync(inputDir).filter((file) => {
     const ext = path.extname(file).toLowerCase();
     return allowedExtensions.includes(ext);
   });
 
+  // Handle case where no valid files are found
   if (files.length === 0) {
     operationStatus.printMessage(
-      `Nenhum vídeo compatível encontrado na pasta '${inputDir}'.`,
+      `No compatible video files found in directory '${inputDir}'.`,
     );
     return [];
   }
 
   operationStatus.printMessage(
-    `🔍 Analisando metadados de ${files.length} arquivo(s)...`,
+    `Analyzing metadata for ${files.length} file(s)...`,
   );
 
   const episodes: Episode[] = [];
@@ -65,36 +73,36 @@ export function getEpisodes({
     const inputPath = path.join(inputDir, file);
     const parsedFile = path.parse(file);
 
-    // Constrói o caminho de saída com o sufixo (ex: inputs/Naruto.mp4 -> outputs/Naruto_4k.mp4)
+    // Build output path with suffix (e.g., inputs/video.mp4 -> outputs/video_4k.mp4)
     const outputPath = path.join(
       outputDir,
       `${parsedFile.name}${outputSuffix}${parsedFile.ext}`,
     );
 
     try {
-      // ffprobe: extrai duração, frames e framerate no formato JSON
+      // ffprobe command to extract duration, frame count, and framerate in JSON format
       const cmd = `ffprobe -v error -select_streams v:0 -show_entries stream=duration,nb_frames,r_frame_rate -of json "${inputPath}"`;
 
       const stdout = execSync(cmd).toString();
       const data = JSON.parse(stdout).streams[0];
 
       if (!data) {
-        throw new Error("Nenhum stream de vídeo encontrado no arquivo.");
+        throw new Error("No video stream found in file.");
       }
 
       const duration = parseFloat(data.duration);
 
-      // Cálculo do framerate
+      // Calculate framerate
       const [num, den] = data.r_frame_rate.split("/").map(Number);
       const framerate = num / den;
 
-      // Resgate (Fallback): Calcula os frames caso o ffprobe não reporte
+      // Fallback: estimate frame count if not provided by ffprobe
       let frames = parseInt(data.nb_frames || "0", 10);
       if (frames === 0 || isNaN(frames)) {
         frames = Math.round(duration * framerate);
       }
 
-      // Adiciona na fila de episódios
+      // Add episode to processing queue
       episodes.push({
         id: `${Date.now()}_${index}`,
         name: parsedFile.name,
@@ -105,21 +113,23 @@ export function getEpisodes({
         outputPath,
       });
     } catch (error) {
-      // Passamos () => {} pois não estamos rejeitando uma Promise
+      // Handle metadata extraction failure and skip file
       const errorMessage =
         error instanceof Error ? error.message : String(error);
+
       operationStatus.printErrorMessage(
         () => {},
-        `Ignorando '${file}': Falha ao ler metadados com ffprobe. Erro: ${errorMessage}`,
+        `Skipping '${file}': Failed to read metadata using ffprobe. Error: ${errorMessage}`,
       );
+
       continue;
     }
   }
 
-  // Log de sucesso informando quantos entraram na fila
+  // Log success if at least one episode was queued
   if (episodes.length > 0) {
     operationStatus.printMessage(
-      `✅ ${episodes.length} vídeo(s) lido(s) e na fila para processamento.`,
+      `${episodes.length} video(s) successfully loaded into the processing queue.`,
     );
   }
 

@@ -5,35 +5,35 @@ import type { Episode } from "./types/Episode";
 import OperationStatus from "./utils/OperationStatus";
 
 /**
- * Configurações para a codificação de vídeo utilizando o FFmpeg.
+ * Configuration options for video encoding using FFmpeg.
  */
 export type EncodeEpisodeArgs = {
-  /** Codec de vídeo a ser utilizado. Padrão: "h264_nvenc" (Hardware de Nvidia). Para CPU use "libx264". */
+  /** Video codec to be used. Default: "h264_nvenc" (NVIDIA hardware). Use "libx264" for CPU encoding. */
   videoCodec?: string;
-  /** Codec de áudio a ser utilizado. Padrão: "copy" (mantém o original sem recodificar, muito mais rápido). */
+  /** Audio codec to be used. Default: "copy" (keeps original without re-encoding, much faster). */
   audioCodec?: string;
-  /** Formato de pixel. Padrão: "yuv420p" (maior compatibilidade com players comuns). */
+  /** Pixel format. Default: "yuv420p" (higher compatibility with common players). */
   pixelFormat?: string;
-  /** Extensão das imagens de input (upscaled). Padrão: "png". Pode ser "jpg". */
+  /** Input frame image extension (upscaled). Default: "png". Can be "jpg". */
   frameExtension?: "png" | "jpg";
-  /** Caminho do executável do FFmpeg. Padrão: "ffmpeg" (espera que esteja nas variáveis de ambiente/PATH). */
+  /** Audio file extension. Default: "m4a". */
   audioExtension?: string;
-  /** Extensão do arquivo de audio. Padrão "m4a" */
+  /** Path to the FFmpeg executable. Default: "ffmpeg" (expects it to be available in PATH). */
   ffmpegPath?: string;
 };
 
 /**
- * Combina os frames upscaled e o arquivo de áudio para gerar o arquivo de vídeo final (.mp4/.mkv).
+ * Combines upscaled frames and the audio file to generate the final video file (.mp4/.mkv).
  *
- * Etapas realizadas:
- * 1. Confirma e cria (se necessário) a pasta de destino.
- * 2. Remove o vídeo antigo caso já exista para evitar conflitos.
- * 3. Chama o FFmpeg para fazer o multiplexing (Mux) de vídeo e áudio.
- * 4. Exibe o progresso em tempo real baseado no STDERR emitido pelo FFmpeg.
+ * Steps performed:
+ * 1. Ensures the output directory exists (creates it if necessary).
+ * 2. Removes any existing output file to avoid conflicts.
+ * 3. Invokes FFmpeg to multiplex (mux) video and audio.
+ * 4. Displays real-time progress based on FFmpeg stderr output.
  *
- * @param episode - Objeto contendo os metadados do episódio e caminhos de arquivo.
- * @param options - Objeto opcional com configurações de codec, formatos e caminhos.
- * @returns Uma Promise que resolve na conclusão da renderização ou rejeita em caso de erro.
+ * @param episode - Object containing episode metadata and file paths.
+ * @param options - Optional configuration for codecs, formats, and paths.
+ * @returns A Promise that resolves on successful completion or rejects on error.
  */
 export function encodeEpisode(
   episode: Episode,
@@ -48,7 +48,7 @@ export function encodeEpisode(
 ): Promise<void> {
   return new Promise((resolve, reject) => {
     const operationStatus = new OperationStatus("Encode");
-    operationStatus.printMessage("Recriando vídeo...");
+    operationStatus.printMessage("Rebuilding video...");
 
     const upscaledDir = path.join("temp", "framesUpscaled", String(episode.id));
     const audioPath = path.join(
@@ -57,38 +57,39 @@ export function encodeEpisode(
       `${episode.id}.${audioExtension}`,
     );
     const outputPath = episode.outputPath;
-    // Garante que o diretório final exista
+
+    // Ensure output directory exists
     const outputDir = path.dirname(outputPath);
     if (!fs.existsSync(outputDir)) {
       fs.mkdirSync(outputDir, { recursive: true });
     }
 
-    // Remove arquivo existente para não dar conflito de permissão com o FFmpeg
+    // Remove existing file to avoid permission conflicts with FFmpeg
     if (fs.existsSync(outputPath)) {
       fs.rmSync(outputPath, { force: true });
     }
 
-    // Padrão de input do FFmpeg para sequencia de imagens (ex: pasta/frame_00001.png)
+    // FFmpeg input pattern for image sequence (e.g., folder/frame_00001.png)
     const frameInputPattern = path.join(
       upscaledDir,
       `frame_%05d.${frameExtension}`,
     );
 
     const args = [
-      // Força sobreposição de arquivo, caso o fs.rmSync tenha falhado silenciosamente
+      // Force overwrite in case removal failed silently
       "-y",
 
-      // Input do vídeo (frames em sequência)
+      // Video input (frame sequence)
       "-framerate",
       String(episode.framerate || 30),
       "-i",
       frameInputPattern,
 
-      // Input do áudio
+      // Audio input
       "-i",
       audioPath,
 
-      // Configuração de Codecs
+      // Codec configuration
       "-c:v",
       videoCodec,
       "-pix_fmt",
@@ -96,7 +97,7 @@ export function encodeEpisode(
       "-c:a",
       audioCodec,
 
-      // Output final
+      // Final output
       outputPath,
     ];
 
@@ -105,12 +106,12 @@ export function encodeEpisode(
     const startTime = Date.now();
 
     /**
-     * O FFmpeg envia seus logs de progresso e informações pela saída padrão de ERRO (stderr), e não pelo stdout.
+     * FFmpeg outputs progress and logs through stderr instead of stdout.
      */
     ff.stderr.on("data", (data: Buffer) => {
       const text = data.toString();
 
-      // Expressão regular que busca a string "frame=  123" no terminal do FFmpeg
+      // Regex to capture "frame=  123" from FFmpeg output
       const match = text.match(/frame=\s*(\d+)/);
       if (match) {
         const frame = parseInt(match[1]!);
@@ -144,7 +145,7 @@ export function encodeEpisode(
         operationStatus.printErrorMessage(() => {
           reject(
             new Error(
-              `Erro ao gerar vídeo: FFmpeg encerrou com código ${code}`,
+              `Failed to encode video: FFmpeg exited with code ${code}`,
             ),
           );
         });
@@ -152,9 +153,7 @@ export function encodeEpisode(
     });
 
     ff.on("error", (error) => {
-      reject(
-        new Error(`Falha ao iniciar o processo do FFmpeg: ${error.message}`),
-      );
+      reject(new Error(`Failed to start FFmpeg process: ${error.message}`));
     });
   });
 }

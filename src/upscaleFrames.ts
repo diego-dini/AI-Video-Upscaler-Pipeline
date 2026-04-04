@@ -5,26 +5,35 @@ import type { Episode } from "./types/Episode";
 import OperationStatus from "./utils/OperationStatus";
 
 /**
- * Configurações para a execução do Real-ESRGAN via linha de comando.
+ * Configuration options for running Real-ESRGAN via command line.
  */
 export type UpscaleFramesArgs = {
-  /** Fator de escala do upscale (ex: 2, 3, 4). Padrão: 4. */
+  /** Upscale factor (e.g., 2, 3, 4). Default: 4. */
   scale?: number;
-  /** Nome do modelo de IA a ser utilizado. Padrão: "realesr-animevideov3". */
+  /** AI model name to be used. Default: "realesr-animevideov3". */
   modelName?: string;
-  /** IDs das GPUs que serão utilizadas, separadas por vírgula. Padrão: [0] (primeira GPU). */
+  /** GPU IDs to be used, separated by commas. Default: [0] (first GPU). */
   gpuId?: number[];
-  /** Caminho para o executável do Real-ESRGAN. Padrão: Variável de ambiente ou caminho relativo. */
+  /** Path to the Real-ESRGAN executable. Default: environment variable or relative path. */
   realesrgan?: string;
-  /** Configuração de threads por etapa de processamento [load:proc:save]. Padrão: ["4:8:4"]. */
+  /** Thread configuration per stage [load:proc:save]. Default: ["4:8:4"]. */
   threadCount?: string[];
-  /** Tamanho do tile (blocos) para economizar VRAM. Valores menores usam menos memória. Padrão: 512. */
+  /** Tile size (blocks) to reduce VRAM usage. Lower values use less memory. Default: 512. */
   tile?: number;
 };
 
 /**
- * Executa o processo de upscale dos frames de um episódio utilizando a IA Real-ESRGAN.
- * O processo ocorre de forma assíncrona gerando um processo filho (child_process).
+ * Performs AI-based upscaling of episode frames using Real-ESRGAN.
+ *
+ * Steps performed:
+ * 1. Validates and resolves the executable path.
+ * 2. Ensures input and output directories are correctly prepared.
+ * 3. Invokes Real-ESRGAN CLI with the configured parameters.
+ * 4. Tracks progress in real time based on process output.
+ *
+ * @param episode - Object containing episode metadata and file paths.
+ * @param options - Optional configuration for scaling, model, GPU, and performance tuning.
+ * @returns A Promise that resolves on successful completion or rejects on error.
  */
 export function upscaleFrames(
   episode: Episode,
@@ -33,7 +42,6 @@ export function upscaleFrames(
     modelName = "realesr-animevideov3",
     gpuId = [0],
     threadCount = ["4:8:4"],
-    // Usa a variável de ambiente OU o caminho relativo por padrão
     realesrgan = process.env.REALESRGAN_PATH ||
       path.join("realesrgan", "realesrgan-ncnn-vulkan.exe"),
     tile = 512,
@@ -42,47 +50,50 @@ export function upscaleFrames(
   return new Promise((resolve, reject) => {
     if (!realesrgan) throw new Error("Invalid realesrgan path");
 
-    // Resolve o caminho para garantir que o spawn use o caminho absoluto correto baseado na pasta raiz do projeto
+    // Resolve executable path to ensure correct absolute reference
     const executablePath = path.resolve(realesrgan);
 
-    // Verifica se o executável realmente existe antes de tentar rodar
+    // Validate that the executable exists before running
     if (!fs.existsSync(executablePath)) {
       return reject(
-        new Error(
-          `Executável do Real-ESRGAN não encontrado em: ${executablePath}`,
-        ),
+        new Error(`Real-ESRGAN executable not found at: ${executablePath}`),
       );
     }
 
     const operationStatus = new OperationStatus("Upscale");
-    operationStatus.printMessage("Upscale com IA...");
+    operationStatus.printMessage("Running AI upscaling...");
 
-    // Definição dos diretórios de entrada e saída baseados no ID do episódio
+    // Define input and output directories based on episode ID
     const framesDir = path.join("temp", "frames", String(episode.id));
     const upscaledDir = path.join("temp", "framesUpscaled", String(episode.id));
 
-    // Prepara o diretório de saída
+    // Prepare output directory
     if (fs.existsSync(upscaledDir)) {
       fs.rmSync(upscaledDir, { recursive: true, force: true });
     }
     fs.mkdirSync(upscaledDir, { recursive: true });
 
-    // Montagem dos argumentos para o CLI
+    // Build CLI arguments
     const args = ["-i", framesDir, "-o", upscaledDir, "-v"];
 
     if (modelName) args.push("-n", modelName);
     if (scale) args.push("-s", scale.toString());
     if (gpuId && gpuId.length > 0) args.push("-g", gpuId.join(","));
-    if (threadCount && threadCount.length > 0)
+    if (threadCount && threadCount.length > 0) {
       args.push("-j", threadCount.join(","));
+    }
     if (tile) args.push("-t", tile.toString());
 
-    // Inicia o processo filho do Real-ESRGAN usando o caminho resolvido
+    // Start Real-ESRGAN process using resolved executable path
     const up = spawn(executablePath, args);
 
     let processed = 0;
     const startTime = Date.now();
 
+    /**
+     * Real-ESRGAN outputs progress through stdout/stderr.
+     * Each completed frame is parsed and counted to estimate progress.
+     */
     const handleData = (data: Buffer) => {
       const text = data.toString();
 
@@ -124,7 +135,7 @@ export function upscaleFrames(
       } else {
         operationStatus.printErrorMessage(() => {
           reject(
-            new Error(`Erro no upscale: Processo encerrado com código ${code}`),
+            new Error(`Upscaling failed: process exited with code ${code}`),
           );
         });
       }
@@ -132,9 +143,7 @@ export function upscaleFrames(
 
     up.on("error", (error) => {
       reject(
-        new Error(
-          `Falha ao iniciar o processo do Real-ESRGAN: ${error.message}`,
-        ),
+        new Error(`Failed to start Real-ESRGAN process: ${error.message}`),
       );
     });
   });

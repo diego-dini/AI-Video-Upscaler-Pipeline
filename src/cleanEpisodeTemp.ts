@@ -4,23 +4,23 @@ import type { Episode } from "./types/Episode";
 import OperationStatus from "./utils/OperationStatus";
 
 /**
- * Remove artefatos temporários (arquivos e pastas) de um episódio após o processamento.
+ * Removes temporary artifacts (files and directories) for a given episode after processing.
  *
- * Itens limpos:
+ * Cleaned items:
  * - temp/frames/{episode.id}
  * - temp/framesUpscaled/{episode.id}
  * - temp/audio/{episode.id}.aac
  * - temp/audio/{episode.id}.m4a
  *
- * @param episode Objeto contendo os metadados do episódio.
+ * @param episode Object containing episode metadata.
  */
 export function cleanEpisodeTemp(episode: Episode): void {
-  // Instancia o gerenciador de status com o nome da operação
+  // Initialize the operation status handler with the operation name
   const operationStatus = new OperationStatus("Cleanup");
 
   const id = String(episode.id);
 
-  // Lista centralizada de todos os caminhos que devem ser apagados.
+  // Centralized list of all paths that should be removed
   const pathsToRemove = [
     path.join("temp", "frames", id),
     path.join("temp", "framesUpscaled", id),
@@ -29,23 +29,23 @@ export function cleanEpisodeTemp(episode: Episode): void {
   ];
 
   try {
-    // Apaga cada arquivo/pasta da lista
+    // Remove each file/directory from the list
     for (const targetPath of pathsToRemove) {
       fs.rmSync(targetPath, { recursive: true, force: true });
     }
 
-    // Usa o OperationStatus para printar o sucesso de forma padronizada
+    // Use OperationStatus to print a standardized success message
     operationStatus.printMessage(
-      `🧹 Temp do episódio ${episode.name} (ID: ${id}) limpo com sucesso.`,
+      `Temporary files for episode "${episode.name}" (ID: ${id}) were successfully cleaned.`,
     );
   } catch (error) {
-    // Caso de erro (ex: arquivo travado no Windows).
-    // Passamos () => {} pois não estamos em uma Promise para dar reject().
+    // Error handling (e.g., locked files on Windows)
+    // Passing () => {} since this is not inside a Promise context
     const errorMessage = error instanceof Error ? error.message : String(error);
 
     operationStatus.printErrorMessage(
       () => {},
-      `Não foi possível limpar todos os arquivos. Erro: ${errorMessage}`,
+      `Failed to clean all temporary files. Error: ${errorMessage}`,
     );
   }
 }
